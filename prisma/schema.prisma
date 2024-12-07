@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  address   String   @unique // Ethereum address
+  nfts      NFT[]    @relation("UserNFTs")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NFT {
+  id          String   @id @default(cuid())
+  tokenId     String
+  name        String
+  description String?
+  imageUrl    String
+  price       Float?
+  owner       User     @relation("UserNFTs", fields: [ownerId], references: [id])
+  ownerId     String
+  collection  Collection @relation(fields: [collectionId], references: [id])
+  collectionId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tokenId, collectionId])
+  @@index([ownerId])
+  @@index([collectionId])
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  nfts        NFT[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NFTProject {
+  id            String          @id @default(cuid())
+  name          String
+  symbol        String
+  socialMetrics SocialMetrics?
+  sentimentData SentimentData[]
+  trendAnalyses TrendAnalysis[]
+}
+
+model SocialMetrics {
+  id              String     @id @default(cuid())
+  projectId       String     @unique
+  project         NFTProject @relation(fields: [projectId], references: [id])
+  twitterFollowers Int
+  engagement24h    Int
+  mentionsCount    Int
+}
+
+model SentimentData {
+  id        String     @id @default(cuid())
+  projectId String
+  project   NFTProject @relation(fields: [projectId], references: [id])
+  source    String
+  sentiment Float
+  volume    Int
+  timestamp DateTime   @default(now())
+}
+
+model TrendAnalysis {
+  id        String     @id @default(cuid())
+  projectId String
+  project   NFTProject @relation(fields: [projectId], references: [id])
+  timeframe String
+  trend     Float
+  endDate   DateTime   @default(now())
+}
